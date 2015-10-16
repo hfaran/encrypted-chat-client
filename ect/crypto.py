@@ -10,7 +10,7 @@ from cryptography.hazmat.backends import default_backend
 
 BACKEND = default_backend()
 BLOCK_SIZE = 32  # bytes
-
+TO_BITS = 8  # multiplication factor to bits from bytes
 
 # Encryption technique recommendations taken from Colin Percival's
 # Cryptographic Right Answers.
@@ -46,7 +46,8 @@ def encrypt(key, message):
 def decrypt(key, ct):
     """Decrypts ciphertext ``ct`` with ``key``"""
     # Decompose the ciphertext
-    ct, nonce, mac = ct[:-64], ct[-64:-32], ct[-32:]
+    ct, nonce, mac = ct[:-BLOCK_SIZE*2], ct[-BLOCK_SIZE*2:-BLOCK_SIZE], \
+                     ct[-BLOCK_SIZE:]
     # Create the cipher with the extracted nonce
     cipher, _nonce = create_cipher(key, nonce=nonce)
     assert _nonce == nonce
@@ -74,7 +75,7 @@ def create_cipher(key, nonce=None):
     nonce = os.urandom(BLOCK_SIZE) if nonce is None else nonce
     # Create an AES primitive of BLOCK_SIZE (256-bit in this case)
     a = algorithms.AES(key)
-    a.block_size = BLOCK_SIZE * 8
+    a.block_size = BLOCK_SIZE * TO_BITS
     # Create a Cipher using the AES primitive and CTR mode with the nonce
     cipher = Cipher(a, modes.CTR(nonce), backend=BACKEND)
     return cipher, nonce

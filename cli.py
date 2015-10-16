@@ -1,7 +1,8 @@
+#!/usr/bin/env python2.7
+
 import click
 
-# from ect.server import server as ect_server
-# from ect.server import client as ect_client
+
 from ect.message import Client
 from ect.message import Server
 

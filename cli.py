@@ -20,7 +20,6 @@ def server(port):
     try:
         while 1:
             print("Received message: {}".format(serv.recv()))
-            serv.send(raw_input("Enter Message to Send: "))
     except KeyboardInterrupt:
         serv.close()
 
@@ -33,7 +32,6 @@ def client(ip, port):
     try:
         while 1:
             c.send(raw_input("Enter Message to Send: "))
-            print("Received message: {}".format(c.recv()))
     except KeyboardInterrupt:
         c.close()
 

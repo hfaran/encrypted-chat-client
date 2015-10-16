@@ -12,19 +12,11 @@ class Sock(object):
     def conn(self):
         raise NotImplementedError
 
-    def _encrypt(self, msg):
-        # TODO
-        return msg
-
-    def _decrypt(self, msg):
-        # TODO
-        return msg
-
     def send(self, msg):
-        self.conn.send(self._encrypt(msg))
+        self.conn.send(msg)
 
     def recv(self):
-        return self._decrypt(self.conn.recv(self.BUFSIZE))
+        return self.conn.recv(self.BUFSIZE)
 
     @abstractmethod
     def close(self):

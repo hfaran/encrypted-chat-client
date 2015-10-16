@@ -25,7 +25,7 @@ kivy gui.py
 
 ### Setup
 
-```
+```bash
 # If you use virtualenvwrapper...
 mkvirtualenv ect
 # Install the requirements
@@ -34,6 +34,6 @@ pip install $(cat requirements.txt cli_requirements.txt)
 
 ### Usage
 
-```
+```bash
 ./cli.py --help
 ```

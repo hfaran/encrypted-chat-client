@@ -24,7 +24,8 @@ def encrypt(key, message):
 
     * A cipher is created along with a random nonce.
     * The text is encrypted with the key using AES with CTR.
-    * Using HMAC, a MAC is calculated for the plaintext with the ``key``.
+    * Using HMAC, a MAC is calculated for the ciphertext with a key derived
+    from the ``key``.
     * The ciphertext is composed of the encrypted message, the MAC, and the
     nonce
 

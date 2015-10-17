@@ -3,6 +3,7 @@ import os
 from cryptography.hazmat.primitives.ciphers import Cipher
 from cryptography.hazmat.primitives.ciphers import algorithms
 from cryptography.hazmat.primitives.ciphers import modes
+from cryptography.hazmat.primitives.kdf.hkdf import HKDFExpand
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import hmac
 from cryptography.hazmat.backends import default_backend
@@ -34,12 +35,16 @@ def encrypt(key, message):
     # Create encryptor
     cipher, nonce = create_cipher(key)
     encryptor = cipher.encryptor()
-    # Calculate MAC
-    h = hmac.HMAC(key, hashes.SHA256(), backend=BACKEND)
-    h.update(message)
+    
+    # Encrypt message
+    ct = encryptor.update(message) + encryptor.finalize()
+    
+    # Calculate HMAC following Encrypt-then-MAC way
+    mac_key = derive_new_key(key)
+    h = hmac.HMAC(mac_key, hashes.SHA256(), backend=BACKEND)
+    h.update(ct + nonce)
     mac = h.finalize()
-    # Compose ciphertext
-    ct = encryptor.update(message) + encryptor.finalize() + nonce + mac
+    ct += nonce + mac
     return ct
 
 
@@ -48,16 +53,18 @@ def decrypt(key, ct):
     # Decompose the ciphertext
     ct, nonce, mac = ct[:-BLOCK_SIZE*2], ct[-BLOCK_SIZE*2:-BLOCK_SIZE], \
                      ct[-BLOCK_SIZE:]
+    
+    # Check the MAC
+    mac_key = derive_new_key(key)
+    h = hmac.HMAC(mac_key, hashes.SHA256(), backend=BACKEND)
+    h.update(ct + nonce)
+    h.verify(mac)
     # Create the cipher with the extracted nonce
     cipher, _nonce = create_cipher(key, nonce=nonce)
     assert _nonce == nonce
     # Decrypt the plaintext
     decryptor = cipher.decryptor()
     pt = decryptor.update(ct) + decryptor.finalize()
-    # Check the MAC
-    h = hmac.HMAC(key, hashes.SHA256(), backend=BACKEND)
-    h.update(pt)
-    h.verify(mac)
     # Return the verified plaintext
     return pt
 
@@ -79,3 +86,10 @@ def create_cipher(key, nonce=None):
     # Create a Cipher using the AES primitive and CTR mode with the nonce
     cipher = Cipher(a, modes.CTR(nonce), backend=BACKEND)
     return cipher, nonce
+
+
+# MAC should not use the same key as the encryption
+def derive_new_key(key):
+    hkdf = HKDFExpand(algorithm=hashes.SHA256(), length=BLOCK_SIZE,
+                      info=None, backend=BACKEND)
+    return hkdf.derive(key)

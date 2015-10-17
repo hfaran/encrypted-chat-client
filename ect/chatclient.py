@@ -50,50 +50,38 @@ class ChatClientClient(ChatClientBase):
     def Ks(self):
         return self._session_key
 
-    def mutual_authentication(self):
-        """Coroutine that handles the mutual authentication process
+    def mutauth_step(self, reset=False):
+        """This method steps through mutual authentication using Diffie-Helman
 
-        Whenever there is a `yield <object>` in the coroutine, you
-         should use `next(mutauth)` in the calling code, where `mutauth`
-         is an instance of the coroutine.
-         Whenever there is a `resp = yield` in a coroutine, the calling
-         code should send a value using `mutauth.send(resp)`
+        Each call to this method will perform one step out of the
+         total steps necessary for authentication.
+
+        :param bool reset: If this is set, we reset back to step -1
         """
-        # Send our public key (Ra)
-        Ra = 4  # TODO
-        yield Ra
+        if reset:
+            self._kes = self.KEY_EXCHANGE_STATES[-1]
+            return
 
-        # Get response: RB, E("Bob", RA, gb mod p, KAB)
-        resp = yield
-        # TODO do things here to verify responses
-
-        # Once verified, we can assign the session key and consider
-        #  ourselves authenticated
-        self._session_key = "something"
-
-        # Send E("Alice", RB, ga mod p, KAB)
-        yield "something_else"
-
-    def mutauth_step(self, messsage=None):
-        """This method steps through the mutual_authentication coroutine
-        by keeping state using self._kes being one of the four key exchange
-        states
-        """
         if self._kes == self.KEY_EXCHANGE_STATES[-1]:
-            self._muauth = self.mutual_authentication()
-            res = next(self._muauth)
+            # Send our public key (Ra)
+            self._Ra = 4  # TODO
+            self.client.send(self._Ra)  # TODO
             self._kes = self.KEY_EXCHANGE_STATES[0]
-            return res
         elif self._kes == self.KEY_EXCHANGE_STATES[0]:
-            self._muauth.send(messsage)
+            # Get response: RB, E("Bob", RA, gb mod p, KAB)
+            resp = self.server.recv()
+            # TODO do things here to verify responses
+            # ...
+            # Once verified, we can assign the session key and consider
+            #  ourselves authenticated
+            self._session_key = "something to do with {}".format(resp)
             self._kes = self.KEY_EXCHANGE_STATES[1]
         elif self._kes == self.KEY_EXCHANGE_STATES[1]:
-            res = next(self._muauth)
+            # Send E("Alice", RB, ga mod p, KAB)
+            self.client.send("something_else")
             self._kes = self.KEY_EXCHANGE_STATES[2]
-            return res
         elif self._kes == self.KEY_EXCHANGE_STATES[2]:
-            del self._muauth
-            self._kes = self.KEY_EXCHANGE_STATES[-1]
+            raise StopIteration("Authentication completed successfully.")
 
 
 class ChatClientServer(ChatClientBase):

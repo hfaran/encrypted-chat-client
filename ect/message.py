@@ -13,9 +13,12 @@ class Sock(object):
         raise NotImplementedError
 
     def send(self, msg):
+        # TODO we should probably add logging here that this message
+        #  is being sent, so that the TA can see it happening
         self.conn.send(msg)
 
     def recv(self):
+        # TODO Same here with the logging
         return self.conn.recv(self.BUFSIZE)
 
     @abstractmethod

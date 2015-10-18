@@ -1,5 +1,5 @@
 import os
-
+import random
 from abc import abstractproperty
 from abc import abstractmethod
 
@@ -56,7 +56,7 @@ class ChatClientClient(ChatClientBase):
         self._mutau_state = self.MUTUAL_AUTH_STATES[-1]
         self._session_key = None
         self._shared_key = None
-        self._secret_value = 1357 # TODO
+        self._secret_value = random.getrandbits(crypto.BLOCK_SIZE) # TODO
 
     MUTUAL_AUTH_STATES = {
         -1: None,
@@ -143,7 +143,7 @@ class ChatClientServer(ChatClientBase):
         self.server = Server(local_ip, local_port)
         self.client = Client(remote_ip, remote_port)
         self._mutau_state = self.MUTUAL_AUTH_STATES[-1]
-        self._secret_value = 1357 # TODO
+        self._secret_value = random.getrandbits(crypto.BLOCK_SIZE) # TODO
 
     def mutauth_step(self, reset=False):
         if reset or self._shared_key is None:

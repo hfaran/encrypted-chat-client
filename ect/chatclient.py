@@ -31,6 +31,12 @@ class ChatClientBase(object):
         """
         raise NotImplementedError
 
+    def extract_auth_msg_parts(self, message):
+        identifier, nonce, public_key = pt[:crypto.BLOCK_SIZE],
+                                        pt[crypto.BLOCK_SIZE:crypto.BLOCK_SIZE],
+                                        pt[-crypto.BLOCK_SIZE:]
+        return identifier, nonce, public_key 
+
 
 class ChatClientClient(ChatClientBase):
     """Alice"""
@@ -38,18 +44,25 @@ class ChatClientClient(ChatClientBase):
                  local_port=8050):
         self.client = Client(remote_ip, remote_port)
         self.server = Server(local_ip, local_port)
-        self._kes = self.KEY_EXCHANGE_STATES[-1]  # key exchange state
+        self._kes = self.MUTUAL_AUTH_STATES_CLIENT[-1]  # key exchange state
         self._session_key = None
         self._shared_key = None
         self._secret_value = 1357 # TODO
         self._g = 3 # TODO
         self._p = 35791 #TODO
 
-    KEY_EXCHANGE_STATES = {
+    MUTUAL_AUTH_STATES_CLIENT = {
         -1: None,
-        0: "PUBKEY_EXCHANGE",
+        0: "NOTIFY_REMOTE",
         1: "VERIFY_REMOTE",
         2: "IDENTIFY_SELF_TO_REMOTE"
+    }
+
+    MUTUAL_AUTH_STATES_SERVER = {
+        -1: None,
+        0: "WAIT",
+        1: "IDENTIFY_SELF_TO_REMOTE",
+        2: "VERIFY_REMOTE"
     }
 
     @property
@@ -70,15 +83,15 @@ class ChatClientClient(ChatClientBase):
         :param bool reset: If this is set, we reset back to step -1
         """
         if reset or self._shared_key is None:
-            self._kes = self.KEY_EXCHANGE_STATES[-1]
+            self._kes = self.MUTUAL_AUTH_STATES_CLIENT[-1]
             return
 
-        if self._kes == self.KEY_EXCHANGE_STATES[-1]:
+        if self._kes == self.MUTUAL_AUTH_STATES_CLIENT[-1]:
             # Send our public key (Ra)
-            self._Ra = 4  # TODO
+            self._Ra = os.urandom(crypto.BLOCK_SIZE)  # TODO
             self.client.send(self._Ra)  # TODO
-            self._kes = self.KEY_EXCHANGE_STATES[0]
-        elif self._kes == self.KEY_EXCHANGE_STATES[0]:
+            self._kes = self.MUTUAL_AUTH_STATES_CLIENT[0]
+        elif self._kes == self.MUTUAL_AUTH_STATES_CLIENT[0]:
             # Get response: RB, E("Bob", RA, gb mod p, KAB)
             resp = self.server.recv()
             # TODO do things here to verify responses
@@ -89,25 +102,25 @@ class ChatClientClient(ChatClientBase):
             self._rb = resp[:crypto.BLOCK_SIZE]
             ct = resp[crypto.BLOCK_SIZE:]
             pt = crypto.decrypt(self._shared_key, ct)
+            
             # what's the size of identifier, ra, and gb mod p? are they all fixed
-            identifier, ra, gb_mod_p = pt[:crypto.BLOCK_SIZE],
-                                       pt[crypto.BLOCK_SIZE:crypto.BLOCK_SIZE],
-                                       pt[-crypto.BLOCK_SIZE:]
+            identifier, ra, gb_mod_p = extract_auth_msg_parts(pt)
+            
             if (self._Ra != ra)
                 pass # TODO: do something it's Trudy
 
             # TODO check if correct
             self._session_key = pow(gb_mod_p, self._secret_value) % self._p
-            self._kes = self.KEY_EXCHANGE_STATES[1]
-        elif self._kes == self.KEY_EXCHANGE_STATES[1]:
+            self._kes = self.MUTUAL_AUTH_STATES_CLIENT[1]
+        elif self._kes == self.MUTUAL_AUTH_STATES_CLIENT[1]:
             # Send E("Alice", RB, ga mod p, KAB)
             identifier = os.urandom(crypto.BLOCK_SIZE)
             ga_mod_p = pow(self._g, self._secret_value) % self._p
             pt = identifier + self._rb + ga_mod_p
             ct = crypto.encrypt(self._shared_key, pt) 
             self.client.send(ct)
-            self._kes = self.KEY_EXCHANGE_STATES[2]
-        elif self._kes == self.KEY_EXCHANGE_STATES[2]:
+            self._kes = self.MUTUAL_AUTH_STATES_CLIENT[2]
+        elif self._kes == self.MUTUAL_AUTH_STATES_CLIENT[2]:
             raise StopIteration("Authentication completed successfully.")
 
 
@@ -119,5 +132,40 @@ class ChatClientServer(ChatClientBase):
         self.server = Server(local_ip, local_port)
         self.client = Client(remote_ip, remote_port)
 
-    # TODO implement this class in similar manner as the above
-    #  ChatClientClient class (but as a "server" or "Bob" instead
+    def mutauth_step(self, reset=False):
+        # TODO implement this class in similar manner as the above
+        #  ChatClientClient class (but as a "server" or "Bob" instead
+        if reset or self._shared_key is None:
+            self._kes = self.MUTUAL_AUTH_STATES_SERVER[-1]
+            return
+
+        if self._kes == self.MUTUAL_AUTH_STATES_SERVER[-1]:
+            # Receive client's nonce
+            self._Ra = self.server.recv() 
+            self._kes = self.MUTUAL_AUTH_STATES_SERVER[0]
+        elif self._kes == self.MUTUAL_AUTH_STATES_SERVER[0]:
+            # Send response: RB, E("Bob", RA, gb mod p, KAB)
+            self._Rb = os.urandom(crypto.BLOCK_SIZE)  # TODO
+            identifier = os.urandom(crypto.BLOCK_SIZE) # TODO
+            gb_mod_p = pow(self._g, self._secret_value) % self._p
+            pt = identifier + self._Ra + gb_mode_p
+            ct = encrypt(self._shared_key, pt)
+            msg = self._Rb + ct
+            self.client.send(msg)
+            self._kes = self.MUTUAL_AUTH_STATES_SERVER[1]
+        elif self._kes == self.MUTUAL_AUTH_STATES_SERVER[1]:
+            # Receive E("Alice", RB, ga mod p, KAB)
+            ct = self.server.recv()
+            pt = crypto.decrypt(self._shared_key, ct)
+            
+            identifier, rb, ga_mod_p = extract_auth_msg_parts(pt)
+            
+            if (self._Rb != rb)
+                pass # TODO: do something it's Trudy
+
+            # TODO check if correct
+            self._session_key = pow(ga_mod_p, self._secret_value) % self._p
+            self._kes = self.MUTUAL_AUTH_STATES_SERVER[2]
+        elif self._kes == self.MUTUAL_AUTH_STATES_SERVER[2]:
+            raise StopIteration("Authentication completed successfully.")
+

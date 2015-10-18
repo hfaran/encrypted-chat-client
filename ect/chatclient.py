@@ -10,8 +10,8 @@ from ect.message import Server
 
 class ChatClientBase(object):
    
-    _g = 3 # TODO
-    _p = 35791 #TODO
+    _g = 2 # TODO
+    _p = 282755483533707287054752184321121345766861480697448703443857012153264407439766013042402571 #TODO
     _shared_key = None
 
     @abstractproperty

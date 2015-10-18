@@ -111,13 +111,13 @@ class ChatClientClient(ChatClientBase):
                 pass # TODO: do something it's Trudy
 
             # confirm
-            self._session_key = pow(long(gb_mod_p), self._secret_value) % self._p
+            self._session_key = pow(long(gb_mod_p), self._secret_value, self._p)
             self._mutau_state = self.MUTUAL_AUTH_STATES[1]
             print "step2 done"
         elif self._mutau_state == self.MUTUAL_AUTH_STATES[1]:
             # Send E("Alice", RB, ga mod p, KAB)
             identifier = os.urandom(crypto.BLOCK_SIZE)
-            ga_mod_p = pow(self._g, self._secret_value) % self._p
+            ga_mod_p = pow(self._g, self._secret_value, self._p)
             pt = identifier + self._rb + str(ga_mod_p)
             ct = crypto.encrypt(self._shared_key, pt) 
             self.client.send(ct)
@@ -161,7 +161,7 @@ class ChatClientServer(ChatClientBase):
             # Send response: RB, E("Bob", RA, gb mod p, KAB)
             self._Rb = os.urandom(crypto.BLOCK_SIZE)  # confirm
             identifier = os.urandom(crypto.BLOCK_SIZE) # confirm
-            gb_mod_p = pow(self._g, self._secret_value) % self._p
+            gb_mod_p = pow(self._g, self._secret_value, self._p)
             pt = identifier + self._Ra + str(gb_mod_p)
             ct = crypto.encrypt(self._shared_key, pt)
             msg = self._Rb + ct
@@ -192,7 +192,7 @@ class ChatClientServer(ChatClientBase):
                 pass # TODO: do something it's Trudy
 
             # confirm
-            self._session_key = pow(long(ga_mod_p), self._secret_value) % self._p
+            self._session_key = pow(long(ga_mod_p), self._secret_value, self._p)
             self._mutau_state = self.MUTUAL_AUTH_STATES[2]
             print "step3 done"
         elif self._mutau_state == self.MUTUAL_AUTH_STATES[2]:

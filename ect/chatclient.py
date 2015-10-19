@@ -141,6 +141,11 @@ class ChatClientServer(ChatClientBase):
         2: "VERIFY_REMOTE"
     }
 
+
+    @property
+    def Ks(self):
+        return self._session_key
+    
     def __init__(self, remote_ip, remote_port, local_ip="0.0.0.0",
                  local_port=8051):
         # Start server first, then client (opposite order from ChatClientClient

@@ -1,0 +1,2 @@
+class BeingAttacked(Exception):
+    pass

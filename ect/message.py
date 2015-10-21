@@ -52,6 +52,10 @@ class Server(Sock):
         self._conn, (self.client_ip, self.client_port) = self.sock.accept()
 
     @property
+    def client_address(self):
+        return self.client_ip, self.client_port
+
+    @property
     def conn(self):
         return self._conn
 

@@ -1,3 +1,6 @@
+import socket
+from time import sleep
+
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.config import Config
@@ -97,7 +100,13 @@ class GuiApp(App):
             txt_port.readonly = True
 
             print_console("Starting Server on port " + txt_port.text)
-            self.bob = ChatClientServer("0.0.0.0", int(txt_port.text))
+            self.bob = None
+            while self.bob is None:
+                try:
+                    self.bob = ChatClientServer("0.0.0.0", int(txt_port.text))
+                except socket.error as e:
+                    print(e)
+                    sleep(1)
             print_console("Setting shared key to " + txt_secret.text)
             self.bob.set_shared_key(txt_secret.text)
 
@@ -266,8 +275,15 @@ class GuiApp(App):
                 txt_port.readonly = True
                 txt_ip.readonly = True
 
-                print_console("Starting Server on port " + txt_port.text)
-                self.alice = ChatClientClient(txt_ip.text, int(txt_port.text))
+                print_console("Starting Client on port " + txt_port.text)
+                self.alice = None
+                while self.alice is None:
+                    try:
+                        self.alice = ChatClientClient(txt_ip.text,
+                                                      int(txt_port.text))
+                    except socket.error as e:
+                        print(e)
+                        sleep(1)
                 print_console("Setting shared key to " + txt_secret.text)
                 self.alice.set_shared_key(txt_secret.text)
             else:

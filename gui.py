@@ -97,9 +97,9 @@ class GuiApp(App):
             txt_port.readonly = True
 
             print_console("Starting Server on port " + txt_port.text)
-            # self.bob = ChatClientServer("0.0.0.0", int(txt_port.text))
+            self.bob = ChatClientServer("0.0.0.0", int(txt_port.text))
             print_console("Setting shared key to " + txt_secret.text)
-            # self.bob.set_shared_key(txt_secret.text)
+            self.bob.set_shared_key(txt_secret.text)
 
         btn_start = Button(text='Start Server')
         btn_start.pos = (500, 395)
@@ -145,8 +145,7 @@ class GuiApp(App):
 
         # Continue button
         def on_server_btn_continue(instance):
-            # if self.bob is not None:
-            if True:
+            if self.bob is not None:
                 if self.done_auth:
                     try:
                         if self.send:
@@ -156,17 +155,21 @@ class GuiApp(App):
                             btn_send.disabled = False
                             self.msg = ""
                         else:
-                            self.bob.recv()
+                            data = self.bob.recv()
+                            if data is not None:
+                                print_console("Received [" + data + "]")
+                            else:
+                                print_console("No data to receive")
                     except NoAuthentication:
                         print_console("We are not authenticated. Reset authentication steps.")
-                        # self.bob.mutauth_step(reset=True)
+                        self.bob.mutauth_step(reset=True)
                 else:
                     try:
                         print_console("Performing a mutual authentication step")
-                        # self.bob.mutauth_step()
+                        self.bob.mutauth_step()
                     except BeingAttacked:
                         print_console("We are being attacked! Reset authentication steps.")
-                        # self.bob.mutauth_step(reset=True)
+                        self.bob.mutauth_step(reset=True)
                     except StopIteration:
                         print_console("Successfully Authenticated")
                         self.done_auth = True
@@ -257,7 +260,18 @@ class GuiApp(App):
 
         # Start button
         def on_client_btn_start(instance):
-            raise NotImplementedError
+            if is_valid_ip(txt_ip.text):
+                btn_start.disabled = True
+                txt_secret.readonly = True
+                txt_port.readonly = True
+                txt_ip.readonly = True
+
+                print_console("Starting Server on port " + txt_port.text)
+                self.alice = ChatClientClient(txt_ip.text, int(txt_port.text))
+                print_console("Setting shared key to " + txt_secret.text)
+                self.alice.set_shared_key(txt_secret.text)
+            else:
+                print_console("Please enter a valid IP address")
 
         btn_start = Button(text='Start Client')
         btn_start.pos = (500, 395)
@@ -286,7 +300,14 @@ class GuiApp(App):
 
         # Send button
         def on_client_btn_send(instance):
-            raise NotImplementedError
+            if self.done_auth:
+                self.send = True
+                self.msg = txt_message.text
+                btn_send.disabled = True
+                txt_message.text = ""
+                print_console("Will send [" + self.msg + "] on next 'Continue'")
+            else:
+                print_console("Finish authentication first!")
 
         btn_send = Button(text='Send')
         btn_send.pos = (535, 25)
@@ -296,7 +317,34 @@ class GuiApp(App):
 
         # Continue button
         def on_client_btn_continue(instance):
-            raise NotImplementedError
+            if self.alice is not None:
+                if self.done_auth:
+                    try:
+                        if self.send:
+                            print_console("Sending [" + self.msg + "]")
+                            self.alice.send(self.msg)
+                            self.send = False
+                            btn_send.disabled = False
+                            self.msg = ""
+                        else:
+                            data = self.alice.recv()
+                            if data is not None:
+                                print_console("Received [" + data + "]")
+                            else:
+                                print_console("No data to receive")
+                    except NoAuthentication:
+                        print_console("We are not authenticated. Reset authentication steps.")
+                        self.alice.mutauth_step(reset=True)
+                else:
+                    try:
+                        print_console("Performing a mutual authentication step")
+                        self.alice.mutauth_step()
+                    except BeingAttacked:
+                        print_console("We are being attacked! Reset authentication steps.")
+                        self.alice.mutauth_step(reset=True)
+                    except StopIteration:
+                        print_console("Successfully Authenticated")
+                        self.done_auth = True
 
         btn_continue = Button(text='Continue')
         btn_continue.pos = (635, 25)

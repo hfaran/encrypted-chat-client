@@ -185,6 +185,22 @@ class GuiApp(App):
         client_tab = TabbedPanelHeader(text='Client')
         client_widget = Widget()
 
+        self.alice = None
+        self.send = False
+        self.msg = ""
+        self.done_auth = False
+
+        # Console
+        txt_console = TextInput(multiline=True)
+        txt_console.pos = (75, 75)
+        txt_console.size = (650, 200)
+        txt_console.readonly = True
+        client_widget.add_widget(txt_console)
+
+        def print_console(msg):
+            txt_console.text = txt_console.text + '\n' + msg
+            txt_console.cursor = (999,999)
+
         # Config label
         lbl_config = Label(text='Client Config')
         lbl_config.pos = (75,525)
@@ -261,13 +277,6 @@ class GuiApp(App):
         lbl_comm.text_size = lbl_comm.size
         lbl_comm.bold = True
         client_widget.add_widget(lbl_comm)
-
-        # Console
-        txt_console = TextInput(multiline=True)
-        txt_console.pos = (75, 75)
-        txt_console.size = (650, 200)
-        txt_console.readonly = True
-        client_widget.add_widget(txt_console)
 
         # Message box
         txt_message = TextInput(multiline=False)

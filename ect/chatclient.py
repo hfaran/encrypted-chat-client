@@ -1,5 +1,6 @@
 import os
 import random
+import struct
 from abc import abstractproperty
 from abc import abstractmethod
 
@@ -8,6 +9,8 @@ from ect.exceptions import BeingAttacked
 from ect.exceptions import NoAuthentication
 from ect.message import Client
 from ect.message import Server
+
+from hashlib import sha256
 
 
 class ChatClientBase(object):
@@ -36,7 +39,7 @@ class ChatClientBase(object):
         raise NotImplementedError
 
     @abstractmethod
-    def recv_loop(self):
+    def recv(self):
         """This method should be invoked as a thread and be continually
         listening for and receiving messages
         """
@@ -128,21 +131,23 @@ class ChatClientClient(ChatClientBase):
             
             self._mutau_state = self.MUTUAL_AUTH_STATES[2]
             print "step3 done"
+            self._session_key = crypto.derive_new_key(str(self._session_key))
         elif self._mutau_state == self.MUTUAL_AUTH_STATES[2]:
+
             raise StopIteration("Authentication completed successfully.")
 
 
     def send(self, message):
-        if self.authenticated(self):
-            ct = crypto.encrypt(message,self._session_key)
+        if self.authenticated == True:
+            ct = crypto.encrypt(self._session_key, message)
             self.client.send(ct)
         else:
             raise NoAuthentication("No Authentication Established")
 
-    def recv_loop(self):
-        if self.authenticated(self):
+    def recv(self):
+        if self.authenticated == True:
             ct = self.server.recv()
-            pt = crypto.decrypt(ct, self._session_key)
+            pt = crypto.decrypt(self._session_key, ct)
             return pt
         else:
             raise NoAuthentication("No Authentication Established")
@@ -218,20 +223,21 @@ class ChatClientServer(ChatClientBase):
             
             self._mutau_state = self.MUTUAL_AUTH_STATES[2]
             print "step3 done"
+            self._session_key = crypto.derive_new_key(str(self._session_key))
         elif self._mutau_state == self.MUTUAL_AUTH_STATES[2]:
             raise StopIteration("Authentication completed successfully.")
 
     def send(self, message):
-        if self.authenticated(self):
-            ct = crypto.encrypt(message,self._session_key)
+        if self.authenticated == True:
+            ct = crypto.encrypt(self._session_key, message)
             self.client.send(ct)
         else:
             raise NoAuthentication("No Authentication Established")
 
-    def recv_loop(self):
-        if self.authenticated(self):
+    def recv(self):
+        if self.authenticated == True:
             ct = self.server.recv()
-            pt = crypto.decrypt(ct, self._session_key)
+            pt = crypto.decrypt(self._session_key, ct)
             return pt
         else:
             raise NoAuthentication("No Authentication Established")

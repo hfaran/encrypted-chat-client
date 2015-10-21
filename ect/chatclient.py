@@ -57,7 +57,10 @@ class ChatClientClient(ChatClientBase):
         self._mutau_state = self.MUTUAL_AUTH_STATES[-1]
         self._session_key = None
         self._shared_key = None
-        self._secret_value = random.randrange(1,self._p-1)
+        self._secret_value = random.getrandbits(crypto.BLOCK_SIZE)
+        while pow(self._g, self._secret_value) < self._p:
+            print "redoing g^a"
+            self._secret_value = random.getrandbits(crypto.BLOCK_SIZE)
 
     MUTUAL_AUTH_STATES = {
         -1: None,
@@ -152,7 +155,10 @@ class ChatClientServer(ChatClientBase):
         self.server = Server(local_ip, local_port)
         self.client = Client(remote_ip, remote_port)
         self._mutau_state = self.MUTUAL_AUTH_STATES[-1]
-        self._secret_value = random.randrange(1,self._p-1)
+        self._secret_value = random.getrandbits(crypto.BLOCK_SIZE)
+        while pow(self._g, self._secret_value) < self._p:
+            print "redoing g^a"
+            self._secret_value = random.getrandbits(crypto.BLOCK_SIZE)
 
     def mutauth_step(self, reset=False):
         if reset or self._shared_key is None:

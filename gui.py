@@ -10,6 +10,15 @@ from kivy.graphics import Rectangle
 
 from ect.chatclient import ChatClientClient
 from ect.chatclient import ChatClientServer
+from ect.exceptions import BeingAttacked
+from ect.exceptions import NoAuthentication
+
+def is_valid_ip(ip):
+    try:
+        parts = ip.split('.')
+        return len(parts) == 4 and all(0 <= int(part) < 256 for part in parts)
+    except:
+        return False
 
 
 class GuiApp(App):
@@ -25,6 +34,22 @@ class GuiApp(App):
     def make_server_tab(self):
         server_tab = TabbedPanelHeader(text='Server')
         server_widget = Widget()
+
+        self.bob = None
+        self.send = False
+        self.msg = ""
+        self.done_auth = False
+
+        # Console
+        txt_console = TextInput(multiline=True)
+        txt_console.pos = (75, 75)
+        txt_console.size = (650, 200)
+        txt_console.readonly = True
+        server_widget.add_widget(txt_console)
+
+        def print_console(msg):
+            txt_console.text = txt_console.text + '\n' + msg
+            txt_console.cursor = (999,999)
 
         # Config label
         lbl_config = Label(text='Server Config')
@@ -67,7 +92,14 @@ class GuiApp(App):
 
         # Start button
         def on_server_btn_start(instance):
-            raise NotImplementedError
+            btn_start.disabled = True
+            txt_secret.readonly = True
+            txt_port.readonly = True
+
+            print_console("Starting Server on port " + txt_port.text)
+            # self.bob = ChatClientServer("0.0.0.0", int(txt_port.text))
+            print_console("Setting shared key to " + txt_secret.text)
+            # self.bob.set_shared_key(txt_secret.text)
 
         btn_start = Button(text='Start Server')
         btn_start.pos = (500, 395)
@@ -88,13 +120,6 @@ class GuiApp(App):
         lbl_comm.bold = True
         server_widget.add_widget(lbl_comm)
 
-        # Console
-        txt_console = TextInput(multiline=True)
-        txt_console.pos = (75, 75)
-        txt_console.size = (650, 200)
-        txt_console.readonly = True
-        server_widget.add_widget(txt_console)
-
         # Message box
         txt_message = TextInput(multiline=False)
         txt_message.pos = (75,25)
@@ -103,7 +128,14 @@ class GuiApp(App):
 
         # Send button
         def on_server_btn_send(instance):
-            raise NotImplementedError
+            if self.done_auth:
+                self.send = True
+                self.msg = txt_message.text
+                btn_send.disabled = True
+                txt_message.text = ""
+                print_console("Will send [" + self.msg + "] on next 'Continue'")
+            else:
+                print_console("Finish authentication first!")
 
         btn_send = Button(text='Send')
         btn_send.pos = (535, 25)
@@ -113,7 +145,32 @@ class GuiApp(App):
 
         # Continue button
         def on_server_btn_continue(instance):
-            raise NotImplementedError
+            # if self.bob is not None:
+            if True:
+                if self.done_auth:
+                    try:
+                        if self.send:
+                            print_console("Sending [" + self.msg + "]")
+                            self.bob.send(self.msg)
+                            self.send = False
+                            btn_send.disabled = False
+                            self.msg = ""
+                        else:
+                            self.bob.recv()
+                    except NoAuthentication:
+                        print_console("We are not authenticated. Reset authentication steps.")
+                        # self.bob.mutauth_step(reset=True)
+                else:
+                    try:
+                        print_console("Performing a mutual authentication step")
+                        # self.bob.mutauth_step()
+                    except BeingAttacked:
+                        print_console("We are being attacked! Reset authentication steps.")
+                        # self.bob.mutauth_step(reset=True)
+                    except StopIteration:
+                        print_console("Successfully Authenticated")
+                        self.done_auth = True
+
 
         btn_continue = Button(text='Continue')
         btn_continue.pos = (635, 25)

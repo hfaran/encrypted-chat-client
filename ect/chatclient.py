@@ -1,6 +1,5 @@
 import os
 import random
-import struct
 from abc import abstractproperty
 from abc import abstractmethod
 
@@ -9,8 +8,7 @@ from ect.exceptions import BeingAttacked
 from ect.exceptions import NoAuthentication
 from ect.message import Client
 from ect.message import Server
-
-from hashlib import sha256
+from ect.crypto import derive_new_key
 
 
 class ChatClientBase(object):
@@ -26,7 +24,7 @@ class ChatClientBase(object):
 
     # GUI should call this fucntion to set the shared key set by TA
     def set_shared_key(self, key=None):
-        self._shared_key = key
+        self._shared_key = derive_new_key(key)
     
     @property
     def authenticated(self):
@@ -54,10 +52,14 @@ class ChatClientBase(object):
 
 class ChatClientClient(ChatClientBase):
     """Alice"""
-    def __init__(self, remote_ip, remote_port, local_ip="0.0.0.0",
-                 local_port=8050):
+    def __init__(self, remote_ip, remote_port, local_ip="0.0.0.0"):
+        local_port = remote_port + 20
         self.client = Client(remote_ip, remote_port)
+        print("{}.client connected on {}:{}".format(self.__class__.__name__,
+            remote_ip, remote_port))
         self.server = Server(local_ip, local_port)
+        print("{}.server connected on {}:{}".format(
+            self.__class__.__name__, local_ip, local_port))
         self._mutau_state = self.MUTUAL_AUTH_STATES[-1]
         self._session_key = None
         self._shared_key = None
@@ -170,11 +172,16 @@ class ChatClientServer(ChatClientBase):
     def Ks(self):
         return self._session_key
 
-    def __init__(self, remote_ip, remote_port, local_ip="0.0.0.0",
-                 local_port=8051):
+    def __init__(self, local_ip="0.0.0.0", local_port=8051):
         # Start server first, then client (opposite order from ChatClientClient
         self.server = Server(local_ip, local_port)
+        print("{}.server connected on {}:{}".format(
+            self.__class__.__name__, local_ip, local_port))
+        remote_ip, _ = self.server.client_address
+        remote_port = local_port + 20
         self.client = Client(remote_ip, remote_port)
+        print("{}.client connected on {}:{}".format(self.__class__.__name__,
+            remote_ip, remote_port))
         self._mutau_state = self.MUTUAL_AUTH_STATES[-1]
         self._secret_value = random.getrandbits(crypto.BLOCK_SIZE)
         while pow(self._g, self._secret_value) < self._p:

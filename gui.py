@@ -1,3 +1,6 @@
+import socket
+from time import sleep
+
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.config import Config
@@ -70,7 +73,7 @@ class GuiApp(App):
         server_widget.add_widget(lbl_port)
 
         # Port input
-        txt_port = TextInput(multiline=False)
+        txt_port = TextInput(multiline=False, text="9001")
         txt_port.pos = (250,450)
         txt_port.size = (150, 30)
         server_widget.add_widget(txt_port)
@@ -85,7 +88,7 @@ class GuiApp(App):
         server_widget.add_widget(lbl_secret)
 
         # Secret input
-        txt_secret = TextInput(multiline=False)
+        txt_secret = TextInput(multiline=False, text="foobar")
         txt_secret.pos = (250,400)
         txt_secret.size = (150, 30)
         server_widget.add_widget(txt_secret)
@@ -97,7 +100,13 @@ class GuiApp(App):
             txt_port.readonly = True
 
             print_console("Starting Server on port " + txt_port.text)
-            self.bob = ChatClientServer("0.0.0.0", int(txt_port.text))
+            self.bob = None
+            while self.bob is None:
+                try:
+                    self.bob = ChatClientServer("0.0.0.0", int(txt_port.text))
+                except socket.error as e:
+                    print(e)
+                    sleep(1)
             print_console("Setting shared key to " + txt_secret.text)
             self.bob.set_shared_key(txt_secret.text)
 
@@ -223,7 +232,7 @@ class GuiApp(App):
         client_widget.add_widget(lbl_ip)
 
         # IP input
-        txt_ip = TextInput(multiline=False)
+        txt_ip = TextInput(multiline=False, text="127.0.0.1")
         txt_ip.pos = (250,475)
         txt_ip.size = (150, 30)
         client_widget.add_widget(txt_ip)
@@ -238,7 +247,7 @@ class GuiApp(App):
         client_widget.add_widget(lbl_port)
 
         # Port input
-        txt_port = TextInput(multiline=False)
+        txt_port = TextInput(multiline=False, text="9001")
         txt_port.pos = (250,425)
         txt_port.size = (150, 30)
         client_widget.add_widget(txt_port)
@@ -253,7 +262,7 @@ class GuiApp(App):
         client_widget.add_widget(lbl_secret)
 
         # Secret input
-        txt_secret = TextInput(multiline=False)
+        txt_secret = TextInput(multiline=False, text="foobar")
         txt_secret.pos = (250,375)
         txt_secret.size = (150, 30)
         client_widget.add_widget(txt_secret)
@@ -266,8 +275,15 @@ class GuiApp(App):
                 txt_port.readonly = True
                 txt_ip.readonly = True
 
-                print_console("Starting Server on port " + txt_port.text)
-                self.alice = ChatClientClient(txt_ip.text, int(txt_port.text))
+                print_console("Starting Client on port " + txt_port.text)
+                self.alice = None
+                while self.alice is None:
+                    try:
+                        self.alice = ChatClientClient(txt_ip.text,
+                                                      int(txt_port.text))
+                    except socket.error as e:
+                        print(e)
+                        sleep(1)
                 print_console("Setting shared key to " + txt_secret.text)
                 self.alice.set_shared_key(txt_secret.text)
             else:

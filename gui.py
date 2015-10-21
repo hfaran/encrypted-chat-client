@@ -66,9 +66,13 @@ class GuiApp(App):
         server_widget.add_widget(txt_secret)
 
         # Start button
+        def on_server_btn_start(instance):
+            raise NotImplementedError
+
         btn_start = Button(text='Start Server')
         btn_start.pos = (500, 395)
         btn_start.size = (200, 100)
+        btn_start.bind(on_release=on_server_btn_start)
         server_widget.add_widget(btn_start)
 
         # Separator line
@@ -98,15 +102,23 @@ class GuiApp(App):
         server_widget.add_widget(txt_message)
 
         # Send button
+        def on_server_btn_send(instance):
+            raise NotImplementedError
+
         btn_send = Button(text='Send')
         btn_send.pos = (535, 25)
         btn_send.size = (90, 30)
+        btn_send.bind(on_release=on_server_btn_send)
         server_widget.add_widget(btn_send)
 
         # Continue button
+        def on_server_btn_continue(instance):
+            raise NotImplementedError
+
         btn_continue = Button(text='Continue')
         btn_continue.pos = (635, 25)
         btn_continue.size = (90, 30)
+        btn_continue.bind(on_release=on_server_btn_continue)
         server_widget.add_widget(btn_continue)
 
         server_tab.content = server_widget
@@ -171,9 +183,13 @@ class GuiApp(App):
         client_widget.add_widget(txt_secret)
 
         # Start button
+        def on_client_btn_start(instance):
+            raise NotImplementedError
+
         btn_start = Button(text='Start Client')
         btn_start.pos = (500, 395)
         btn_start.size = (200, 100)
+        btn_start.bind(on_release=on_client_btn_start)
         client_widget.add_widget(btn_start)
 
         # Separator line
@@ -203,15 +219,23 @@ class GuiApp(App):
         client_widget.add_widget(txt_message)
 
         # Send button
+        def on_client_btn_send(instance):
+            raise NotImplementedError
+
         btn_send = Button(text='Send')
         btn_send.pos = (535, 25)
         btn_send.size = (90, 30)
+        btn_send.bind(on_release=on_client_btn_send)
         client_widget.add_widget(btn_send)
 
         # Continue button
+        def on_client_btn_continue(instance):
+            raise NotImplementedError
+
         btn_continue = Button(text='Continue')
         btn_continue.pos = (635, 25)
         btn_continue.size = (90, 30)
+        btn_continue.bind(on_release=on_client_btn_continue)
         client_widget.add_widget(btn_continue)
 
         client_tab.content = client_widget

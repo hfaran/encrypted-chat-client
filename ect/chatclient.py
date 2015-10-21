@@ -5,6 +5,7 @@ from abc import abstractmethod
 
 from ect import crypto
 from ect.exceptions import BeingAttacked
+from ect.exceptions import NoAuthentication
 from ect.message import Client
 from ect.message import Server
 
@@ -131,6 +132,21 @@ class ChatClientClient(ChatClientBase):
             raise StopIteration("Authentication completed successfully.")
 
 
+    def send(self, message):
+        if self.authenticated(self):
+            ct = crypto.encrypt(message,self._session_key)
+            self.client.send(ct)
+        else:
+            raise NoAuthentication("No Authentication Established")
+
+    def recv_loop(self):
+        if self.authenticated(self):
+            ct = self.server.recv()
+            pt = crypto.decrypt(ct, self._session_key)
+            return pt
+        else:
+            raise NoAuthentication("No Authentication Established")
+
 class ChatClientServer(ChatClientBase):
     """Bob"""
     
@@ -204,3 +220,18 @@ class ChatClientServer(ChatClientBase):
             print "step3 done"
         elif self._mutau_state == self.MUTUAL_AUTH_STATES[2]:
             raise StopIteration("Authentication completed successfully.")
+
+    def send(self, message):
+        if self.authenticated(self):
+            ct = crypto.encrypt(message,self._session_key)
+            self.client.send(ct)
+        else:
+            raise NoAuthentication("No Authentication Established")
+
+    def recv_loop(self):
+        if self.authenticated(self):
+            ct = self.server.recv()
+            pt = crypto.decrypt(ct, self._session_key)
+            return pt
+        else:
+            raise NoAuthentication("No Authentication Established")

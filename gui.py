@@ -164,7 +164,7 @@ class GuiApp(App):
                             btn_send.disabled = False
                             self.msg = ""
                         else:
-                            data = self.bob.recv()
+                            data = self.bob.recv(nb=True)
                             if data is not None:
                                 print_console("Received [" + data + "]")
                             else:
@@ -343,7 +343,7 @@ class GuiApp(App):
                             btn_send.disabled = False
                             self.msg = ""
                         else:
-                            data = self.alice.recv()
+                            data = self.alice.recv(nb=True)
                             if data is not None:
                                 print_console("Received [" + data + "]")
                             else:

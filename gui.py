@@ -73,7 +73,7 @@ class GuiApp(App):
         server_widget.add_widget(lbl_port)
 
         # Port input
-        txt_port = TextInput(multiline=False)
+        txt_port = TextInput(multiline=False, text="9001")
         txt_port.pos = (250,450)
         txt_port.size = (150, 30)
         server_widget.add_widget(txt_port)
@@ -88,7 +88,7 @@ class GuiApp(App):
         server_widget.add_widget(lbl_secret)
 
         # Secret input
-        txt_secret = TextInput(multiline=False)
+        txt_secret = TextInput(multiline=False, text="foobar")
         txt_secret.pos = (250,400)
         txt_secret.size = (150, 30)
         server_widget.add_widget(txt_secret)
@@ -232,7 +232,7 @@ class GuiApp(App):
         client_widget.add_widget(lbl_ip)
 
         # IP input
-        txt_ip = TextInput(multiline=False)
+        txt_ip = TextInput(multiline=False, text="127.0.0.1")
         txt_ip.pos = (250,475)
         txt_ip.size = (150, 30)
         client_widget.add_widget(txt_ip)
@@ -247,7 +247,7 @@ class GuiApp(App):
         client_widget.add_widget(lbl_port)
 
         # Port input
-        txt_port = TextInput(multiline=False)
+        txt_port = TextInput(multiline=False, text="9001")
         txt_port.pos = (250,425)
         txt_port.size = (150, 30)
         client_widget.add_widget(txt_port)
@@ -262,7 +262,7 @@ class GuiApp(App):
         client_widget.add_widget(lbl_secret)
 
         # Secret input
-        txt_secret = TextInput(multiline=False)
+        txt_secret = TextInput(multiline=False, text="foobar")
         txt_secret.pos = (250,375)
         txt_secret.size = (150, 30)
         client_widget.add_widget(txt_secret)

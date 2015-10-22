@@ -17,6 +17,7 @@ from ect.chatclient import ChatClientServer
 from ect.exceptions import BeingAttacked
 from ect.exceptions import NoAuthentication
 from ect.log import log
+from ect.exceptions import NoSharedKey
 
 
 def is_valid_ip(ip):
@@ -186,6 +187,9 @@ class GuiApp(App):
                         self.bob.mutauth_step()
                     except BeingAttacked:
                         print_console("We are being attacked! Reset authentication steps.")
+                        self.bob.mutauth_step(reset=True)
+                    except NoSharedKey:
+                        print_console("Shared key is not yet shared. Please share first")
                         self.bob.mutauth_step(reset=True)
                     except StopIteration:
                         print_console("Successfully Authenticated")
@@ -370,6 +374,9 @@ class GuiApp(App):
                         self.alice.mutauth_step()
                     except BeingAttacked:
                         print_console("We are being attacked! Reset authentication steps.")
+                        self.alice.mutauth_step(reset=True)
+                    except NoSharedKey:
+                        print_console("Shared key is not yet shared. Please share first")
                         self.alice.mutauth_step(reset=True)
                     except StopIteration:
                         print_console("Successfully Authenticated")

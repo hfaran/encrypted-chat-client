@@ -3,3 +3,6 @@ class BeingAttacked(Exception):
 
 class NoAuthentication(Exception):
     pass
+
+class NoSharedKey(Exception):
+    pass

@@ -1,3 +1,4 @@
+import logging
 import os
 
 from cryptography.hazmat.primitives.ciphers import Cipher
@@ -7,6 +8,8 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDFExpand
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import hmac
 from cryptography.hazmat.backends import default_backend
+
+from ect.log import log
 
 
 BACKEND = default_backend()
@@ -54,6 +57,14 @@ def decrypt(key, ct):
     # Decompose the ciphertext
     ct, nonce, mac = ct[:-BLOCK_SIZE*2], ct[-BLOCK_SIZE*2:-BLOCK_SIZE], \
                      ct[-BLOCK_SIZE:]
+    log(
+        logging.info,
+        __name__,
+        decrypt,
+        "\nct: {}\n"
+        "nonce: {}\n"
+        "mac: {}\n".format(ct, nonce, mac)
+    )
     
     # Check the MAC
     mac_key = derive_new_key(key)

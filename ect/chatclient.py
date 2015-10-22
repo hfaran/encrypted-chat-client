@@ -1,3 +1,4 @@
+import logging
 import os
 import random
 import time
@@ -10,6 +11,7 @@ from ect.exceptions import NoAuthentication
 from ect.message import Client
 from ect.message import Server
 from ect.crypto import derive_new_key
+from ect.log import log
 
 
 _pow = pow
@@ -44,17 +46,60 @@ class ChatClientBase(object):
         """Determine if we are authenticated by checking for a session key"""
         return self.Ks is not None
 
-    @abstractmethod
     def send(self, message):
-        """Send a message to the remote"""
-        raise NotImplementedError
+        if self.authenticated == True:
+            log(
+                logging.info,
+                self,
+                self.send, "Encrypting message '{}'...".format(
+                    message,
+                    self._session_key
+                )
+            )
+            ct = crypto.encrypt(self._session_key, message)
+            log(
+                logging.info,
+                self,
+                self.send,
+                "Message encrypted to ciphertext: {}".format(ct))
+            log(
+                logging.info,
+                self,
+                self.send,
+                "Offering to send ciphertext..."
+            )
+            self.client.send(ct)
+            log(
+                logging.info,
+                self,
+                self.send,
+                "Ciphertext sent."
+            )
+        else:
+            raise NoAuthentication("No Authentication Established")
 
-    @abstractmethod
-    def recv(self):
-        """This method should be invoked as a thread and be continually
-        listening for and receiving messages
-        """
-        raise NotImplementedError
+    def recv(self, nb=False):
+        if self.authenticated == True:
+            ct = self.server.recv() if not nb else self.server.nb_recv()
+            if ct is None:
+                return None
+            log(
+                logging.info,
+                self,
+                self.recv,
+                "Ciphertext received: {}".format(ct)
+            )
+            pt = crypto.decrypt(self._session_key, ct)
+            log(
+                logging.info,
+                self,
+                self.recv,
+                "Ciphertext decrypted to: {}".format(pt)
+            )
+            return pt
+        else:
+            raise NoAuthentication("No Authentication Established")
+
 
     def extract_auth_msg_parts(self, m):
         ident, nonce, public_key = m[:crypto.BLOCK_SIZE], \
@@ -68,11 +113,23 @@ class ChatClientClient(ChatClientBase):
     def __init__(self, remote_ip, remote_port, local_ip="0.0.0.0"):
         local_port = remote_port + 20
         self.client = Client(remote_ip, remote_port)
-        print("{}.client connected on {}:{}".format(self.__class__.__name__,
-            remote_ip, remote_port))
+        log(
+            logging.info,
+            self,
+            self.__init__,
+            "Connected on {}:{}".format(self.__class__.__name__,
+            remote_ip, remote_port)
+        )
         self.server = Server(local_ip, local_port)
-        print("{}.server connected on {}:{}".format(
-            self.__class__.__name__, local_ip, local_port))
+        log(
+            logging.info,
+            self,
+            self.__init__,
+            "Connected on {}:{}".format(
+                self.__class__.__name__,
+                local_ip,
+                local_port)
+        )
         self._mutau_state = self.MUTUAL_AUTH_STATES[-1]
         self._session_key = None
         self._shared_key = None
@@ -113,7 +170,6 @@ class ChatClientClient(ChatClientBase):
             self.client.send(self._Ra)
             
             self._mutau_state = self.MUTUAL_AUTH_STATES[0]
-            print "step1 done"
         elif self._mutau_state == self.MUTUAL_AUTH_STATES[0]:
             # Get response: RB, E("Bob", RA, gb mod p, KAB)
             resp = self.server.recv()
@@ -130,7 +186,6 @@ class ChatClientClient(ChatClientBase):
             self._session_key = pow(long(gb_mod_p), self._secret_value, self._p)
             
             self._mutau_state = self.MUTUAL_AUTH_STATES[1]
-            print "step2 done"
         elif self._mutau_state == self.MUTUAL_AUTH_STATES[1]:
             # Send E("Alice", RB, ga mod p, KAB)
 
@@ -145,29 +200,11 @@ class ChatClientClient(ChatClientBase):
             self.client.send(ct)
             
             self._mutau_state = self.MUTUAL_AUTH_STATES[2]
-            print "step3 done"
             self._session_key = crypto.derive_new_key(str(self._session_key))
         elif self._mutau_state == self.MUTUAL_AUTH_STATES[2]:
 
             raise StopIteration("Authentication completed successfully.")
 
-
-    def send(self, message):
-        if self.authenticated == True:
-            ct = crypto.encrypt(self._session_key, message)
-            self.client.send(ct)
-        else:
-            raise NoAuthentication("No Authentication Established")
-
-    def recv(self, nb=False):
-        if self.authenticated == True:
-            ct = self.server.recv() if not nb else self.server.nb_recv()
-            if ct is None:
-                return None
-            pt = crypto.decrypt(self._session_key, ct)
-            return pt
-        else:
-            raise NoAuthentication("No Authentication Established")
 
 class ChatClientServer(ChatClientBase):
     """Bob"""
@@ -190,12 +227,21 @@ class ChatClientServer(ChatClientBase):
     def __init__(self, local_ip="0.0.0.0", local_port=8051):
         # Start server first, then client (opposite order from ChatClientClient
         self.server = Server(local_ip, local_port)
-        print("{}.server connected on {}:{}".format(
-            self.__class__.__name__, local_ip, local_port))
+        log(
+            logging.info,
+            self,
+            self.__init__,
+            "{}.server connected on {}:{}".format(
+                self.__class__.__name__, local_ip, local_port))
         remote_ip, _ = self.server.client_address
         remote_port = local_port + 20
         self.client = Client(remote_ip, remote_port)
-        print("{}.client connected on {}:{}".format(self.__class__.__name__,
+        log(
+            logging.info,
+            self,
+            self.__init__,
+            "{}.client connected on {}:{}".format(
+            self.__class__.__name__,
             remote_ip, remote_port))
         self._mutau_state = self.MUTUAL_AUTH_STATES[-1]
         self._secret_value = random.randrange(
@@ -214,7 +260,6 @@ class ChatClientServer(ChatClientBase):
             self._Ra = self.server.recv()
            
             self._mutau_state = self.MUTUAL_AUTH_STATES[0]
-            print "step1 done"
         elif self._mutau_state == self.MUTUAL_AUTH_STATES[0]:
             # Send response: RB, E("Bob", RA, gb mod p, KAB)
             self._Rb = os.urandom(crypto.BLOCK_SIZE)
@@ -225,7 +270,6 @@ class ChatClientServer(ChatClientBase):
             self.client.send(msg)
            
             self._mutau_state = self.MUTUAL_AUTH_STATES[1]
-            print "step2 done"
         elif self._mutau_state == self.MUTUAL_AUTH_STATES[1]:
             # Receive E("Alice", RB, ga mod p, KAB)
             ct = self.server.recv()
@@ -244,24 +288,6 @@ class ChatClientServer(ChatClientBase):
             self._session_key = pow(long(ga_mod_p), self._secret_value, self._p)
             
             self._mutau_state = self.MUTUAL_AUTH_STATES[2]
-            print "step3 done"
             self._session_key = crypto.derive_new_key(str(self._session_key))
         elif self._mutau_state == self.MUTUAL_AUTH_STATES[2]:
             raise StopIteration("Authentication completed successfully.")
-
-    def send(self, message):
-        if self.authenticated == True:
-            ct = crypto.encrypt(self._session_key, message)
-            self.client.send(ct)
-        else:
-            raise NoAuthentication("No Authentication Established")
-
-    def recv(self, nb=False):
-        if self.authenticated == True:
-            ct = self.server.recv() if not nb else self.server.nb_recv()
-            if ct is None:
-                return None
-            pt = crypto.decrypt(self._session_key, ct)
-            return pt
-        else:
-            raise NoAuthentication("No Authentication Established")

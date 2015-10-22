@@ -1,3 +1,4 @@
+import logging
 import socket
 from time import sleep
 
@@ -15,6 +16,8 @@ from ect.chatclient import ChatClientClient
 from ect.chatclient import ChatClientServer
 from ect.exceptions import BeingAttacked
 from ect.exceptions import NoAuthentication
+from ect.log import log
+
 
 def is_valid_ip(ip):
     try:
@@ -105,7 +108,12 @@ class GuiApp(App):
                 try:
                     self.bob = ChatClientServer("0.0.0.0", int(txt_port.text))
                 except socket.error as e:
-                    print(e)
+                    log(
+                        logging.warning,
+                        self,
+                        self.make_server_tab,
+                        "Error occurred while trying to connect: "
+                        "socket.error: {}; retrying...".format(e))
                     sleep(1)
             print_console("Setting shared key to " + txt_secret.text)
             self.bob.set_shared_key(txt_secret.text)
@@ -282,7 +290,12 @@ class GuiApp(App):
                         self.alice = ChatClientClient(txt_ip.text,
                                                       int(txt_port.text))
                     except socket.error as e:
-                        print(e)
+                        log(
+                            logging.warning,
+                            self,
+                            self.make_client_tab,
+                            "Error occurred while trying to connect: "
+                            "socket.error: {}; retrying...".format(e))
                         sleep(1)
                 print_console("Setting shared key to " + txt_secret.text)
                 self.alice.set_shared_key(txt_secret.text)

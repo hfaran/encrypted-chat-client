@@ -15,6 +15,7 @@ from kivy.graphics import Rectangle
 from ect.chatclient import ChatClientClient
 from ect.chatclient import ChatClientServer
 from ect.exceptions import BeingAttacked
+from ect.exceptions import DataIntegrityException
 from ect.exceptions import NoAuthentication
 from ect.log import log
 from ect.exceptions import NoSharedKey
@@ -181,6 +182,8 @@ class GuiApp(App):
                     except NoAuthentication:
                         print_console("We are not authenticated. Reset authentication steps.")
                         self.bob.mutauth_step(reset=True)
+                    except DataIntegrityException:
+                        print_console("Either Trudy is attacking or more than one message was received. Not going to display the message. Tell your friend to send only one message at a time.")
                 else:
                     try:
                         print_console("Performing a mutual authentication step")
@@ -368,6 +371,8 @@ class GuiApp(App):
                     except NoAuthentication:
                         print_console("We are not authenticated. Reset authentication steps.")
                         self.alice.mutauth_step(reset=True)
+                    except DataIntegrityException:
+                        print_console("Either Trudy is attacking or more than one message was received. Not going to display the message. Tell your friend to send only one message at a time.")
                 else:
                     try:
                         print_console("Performing a mutual authentication step")

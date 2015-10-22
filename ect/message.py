@@ -1,7 +1,9 @@
+import logging
 import socket
 from abc import abstractproperty
 from abc import abstractmethod
 
+from ect.log import log
 
 class Sock(object):
     """Base class for Client and Server"""
@@ -13,13 +15,23 @@ class Sock(object):
         raise NotImplementedError
 
     def send(self, msg):
-        # TODO we should probably add logging here that this message
-        #  is being sent, so that the TA can see it happening
+        log(
+            logging.info,
+            self,
+            self.send,
+            msg
+        )
         self.conn.send(msg)
 
     def recv(self):
-        # TODO Same here with the logging
-        return self.conn.recv(self.BUFSIZE)
+        msg = self.conn.recv(self.BUFSIZE)
+        log(
+            logging.info,
+            self,
+            self.recv,
+            msg
+        )
+        return msg
 
     def nb_recv(self):
         self.conn.setblocking(0)

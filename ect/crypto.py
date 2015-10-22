@@ -9,6 +9,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import hmac
 from cryptography.hazmat.backends import default_backend
 
+from ect.exceptions import DataIntegrityException
 from ect.log import log
 
 
@@ -70,7 +71,14 @@ def decrypt(key, ct):
     mac_key = derive_new_key(key)
     h = hmac.HMAC(mac_key, hashes.SHA256(), backend=BACKEND)
     h.update(ct + nonce)
-    h.verify(mac)
+    try :
+        h.verify(mac)
+    except:
+        # This is just a hotfix so that the gui doesn't crash.
+        # Idealy, the send and recv should have a header specifying
+        # the number of bytes to send/receive
+        raise DataIntegrityException()
+
     # Create the cipher with the extracted nonce
     cipher, _nonce = create_cipher(key, nonce=nonce)
     assert _nonce == nonce

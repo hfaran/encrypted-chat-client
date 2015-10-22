@@ -15,6 +15,7 @@ from kivy.graphics import Rectangle
 from ect.chatclient import ChatClientClient
 from ect.chatclient import ChatClientServer
 from ect.exceptions import BeingAttacked
+from ect.exceptions import DataIntegrityException
 from ect.exceptions import NoAuthentication
 from ect.log import log
 from ect.exceptions import NoSharedKey
@@ -117,7 +118,7 @@ class GuiApp(App):
                         "socket.error: {}; retrying...".format(e))
                     sleep(1)
             print_console("Setting shared key to " + txt_secret.text)
-            self.bob.set_shared_key(txt_secret.text)
+            self.bob.set_shared_key(txt_secret.text.encode())
 
         btn_start = Button(text='Start Server')
         btn_start.pos = (500, 395)
@@ -168,7 +169,7 @@ class GuiApp(App):
                     try:
                         if self.send:
                             print_console("Sending [" + self.msg + "]")
-                            self.bob.send(self.msg)
+                            self.bob.send(self.msg.encode())
                             self.send = False
                             btn_send.disabled = False
                             self.msg = ""
@@ -181,6 +182,8 @@ class GuiApp(App):
                     except NoAuthentication:
                         print_console("We are not authenticated. Reset authentication steps.")
                         self.bob.mutauth_step(reset=True)
+                    except DataIntegrityException:
+                        print_console("Either Trudy is attacking or more than one message was received. Not going to display the message. Tell your friend to send only one message at a time.")
                 else:
                     try:
                         print_console("Performing a mutual authentication step")
@@ -302,7 +305,7 @@ class GuiApp(App):
                             "socket.error: {}; retrying...".format(e))
                         sleep(1)
                 print_console("Setting shared key to " + txt_secret.text)
-                self.alice.set_shared_key(txt_secret.text)
+                self.alice.set_shared_key(txt_secret.text.encode())
             else:
                 print_console("Please enter a valid IP address")
 
@@ -355,7 +358,7 @@ class GuiApp(App):
                     try:
                         if self.send:
                             print_console("Sending [" + self.msg + "]")
-                            self.alice.send(self.msg)
+                            self.alice.send(self.msg.encode())
                             self.send = False
                             btn_send.disabled = False
                             self.msg = ""
@@ -368,6 +371,8 @@ class GuiApp(App):
                     except NoAuthentication:
                         print_console("We are not authenticated. Reset authentication steps.")
                         self.alice.mutauth_step(reset=True)
+                    except DataIntegrityException:
+                        print_console("Either Trudy is attacking or more than one message was received. Not going to display the message. Tell your friend to send only one message at a time.")
                 else:
                     try:
                         print_console("Performing a mutual authentication step")

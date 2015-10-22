@@ -1,5 +1,6 @@
 import os
 import random
+import time
 from abc import abstractproperty
 from abc import abstractmethod
 
@@ -9,6 +10,17 @@ from ect.exceptions import NoAuthentication
 from ect.message import Client
 from ect.message import Server
 from ect.crypto import derive_new_key
+
+
+_pow = pow
+_pow_logging = False
+
+def pow(x,y,z=None):
+    start = time.time()
+    res = _pow(x,y,z)
+    if _pow_logging:
+        print("pow({},{},{}) took {}".format(x,y,z, time.time()-start))
+    return res
 
 
 class ChatClientBase(object):
@@ -24,6 +36,7 @@ class ChatClientBase(object):
 
     # GUI should call this fucntion to set the shared key set by TA
     def set_shared_key(self, key=None):
+        # We need a 32-byte key, so we derive one from the provided
         self._shared_key = derive_new_key(key)
     
     @property
@@ -63,10 +76,10 @@ class ChatClientClient(ChatClientBase):
         self._mutau_state = self.MUTUAL_AUTH_STATES[-1]
         self._session_key = None
         self._shared_key = None
-        self._secret_value = random.getrandbits(crypto.BLOCK_SIZE)
-        while pow(self._g, self._secret_value) < self._p:
-            print "redoing g^a"
-            self._secret_value = random.getrandbits(crypto.BLOCK_SIZE)
+        self._secret_value = random.randrange(
+            320, 1<<(
+            crypto.BLOCK_SIZE*crypto.TO_BITS)
+        )
 
     MUTUAL_AUTH_STATES = {
         -1: None,
@@ -185,10 +198,10 @@ class ChatClientServer(ChatClientBase):
         print("{}.client connected on {}:{}".format(self.__class__.__name__,
             remote_ip, remote_port))
         self._mutau_state = self.MUTUAL_AUTH_STATES[-1]
-        self._secret_value = random.getrandbits(crypto.BLOCK_SIZE)
-        while pow(self._g, self._secret_value) < self._p:
-            print "redoing g^a"
-            self._secret_value = random.getrandbits(crypto.BLOCK_SIZE)
+        self._secret_value = random.randrange(
+            320, 1<<(
+            crypto.BLOCK_SIZE*crypto.TO_BITS)
+        )
 
     def mutauth_step(self, reset=False):
         if reset or self._shared_key is None:

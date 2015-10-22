@@ -21,6 +21,15 @@ class Sock(object):
         # TODO Same here with the logging
         return self.conn.recv(self.BUFSIZE)
 
+    def nb_recv(self):
+        self.conn.setblocking(0)
+        try:
+            return self.recv()
+        except socket.error:
+            return None
+        finally:
+            self.conn.setblocking(1)
+
     @abstractmethod
     def close(self):
         raise NotImplementedError

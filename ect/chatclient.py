@@ -146,9 +146,11 @@ class ChatClientClient(ChatClientBase):
         else:
             raise NoAuthentication("No Authentication Established")
 
-    def recv(self):
+    def recv(self, nb=False):
         if self.authenticated == True:
-            ct = self.server.recv()
+            ct = self.server.recv() if not nb else self.server.nb_recv()
+            if ct is None:
+                return None
             pt = crypto.decrypt(self._session_key, ct)
             return pt
         else:
@@ -241,9 +243,11 @@ class ChatClientServer(ChatClientBase):
         else:
             raise NoAuthentication("No Authentication Established")
 
-    def recv(self):
+    def recv(self, nb=False):
         if self.authenticated == True:
-            ct = self.server.recv()
+            ct = self.server.recv() if not nb else self.server.nb_recv()
+            if ct is None:
+                return None
             pt = crypto.decrypt(self._session_key, ct)
             return pt
         else:

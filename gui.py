@@ -117,7 +117,7 @@ class GuiApp(App):
                         "socket.error: {}; retrying...".format(e))
                     sleep(1)
             print_console("Setting shared key to " + txt_secret.text)
-            self.bob.set_shared_key(txt_secret.text)
+            self.bob.set_shared_key(txt_secret.text.encode())
 
         btn_start = Button(text='Start Server')
         btn_start.pos = (500, 395)
@@ -168,7 +168,7 @@ class GuiApp(App):
                     try:
                         if self.send:
                             print_console("Sending [" + self.msg + "]")
-                            self.bob.send(self.msg)
+                            self.bob.send(self.msg.encode())
                             self.send = False
                             btn_send.disabled = False
                             self.msg = ""
@@ -302,7 +302,7 @@ class GuiApp(App):
                             "socket.error: {}; retrying...".format(e))
                         sleep(1)
                 print_console("Setting shared key to " + txt_secret.text)
-                self.alice.set_shared_key(txt_secret.text)
+                self.alice.set_shared_key(txt_secret.text.encode())
             else:
                 print_console("Please enter a valid IP address")
 
@@ -355,7 +355,7 @@ class GuiApp(App):
                     try:
                         if self.send:
                             print_console("Sending [" + self.msg + "]")
-                            self.alice.send(self.msg)
+                            self.alice.send(self.msg.encode())
                             self.send = False
                             btn_send.disabled = False
                             self.msg = ""

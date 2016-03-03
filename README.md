@@ -1,4 +1,4 @@
-# encryptedchatthing
+# encrypted-chat-client
 
 
 ## GUI
